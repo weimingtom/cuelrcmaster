@@ -27,7 +27,7 @@ public class LrcFile extends OPFile{
 		
 		return src;
 	}
-	
+
 	
 	public String KanjiToKana(String src){
 		try {
