@@ -37,6 +37,7 @@ import java.awt.event.ItemListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
@@ -67,6 +68,29 @@ import javax.swing.event.CaretEvent;
 import javax.swing.event.CaretListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.text.BadLocationException;
+
+/** 
+ * Copyright 2010 Hexen
+ * 	
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ *
+ * @project CueLrcMaster
+ * @author Hexen
+ * @email hexen@live.cn
+ * @version 1.01
+ */
 
 public class MasterFrame extends JFrame {
 
@@ -439,7 +463,7 @@ public class MasterFrame extends JFrame {
 			jCheckBox_autosave.setEnabled(true);
 			if(!jCheckBox_autosave.isSelected())
 				jCheckBox_autosave.doClick();
-			typeBox_musicType.setSelectedItem(oriCue.getoriFileType());
+			typeBox_musicType.setSelectedItem(oriCue.getsrcFileType());
 			typeBox_musicType.setEnabled(true);
 			jPanel_cuemode.setEnabled(true);
 			jPanel_cuemode.setBorder(BorderFactory.createTitledBorder(null, "Cue\u76ee\u6807\u97f3\u9891\u6587\u4ef6\u7c7b\u578b:", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, new Font("\u5b8b\u4f53", Font.BOLD, 12), new Color(51, 51, 51)));
@@ -470,6 +494,8 @@ public class MasterFrame extends JFrame {
 			jRadioButton_roma.setEnabled(true);
 			jRadioButton_kana.setEnabled(true);
 			jButton_convert.setEnabled(true);
+			jTextArea.addCaretListener(new LrcCaretListener());
+			jTextArea.addMouseListener(new LrcMouseAdapter());
 		}
 				
 		
@@ -620,7 +646,7 @@ public class MasterFrame extends JFrame {
 			oriCue=null;
 			oriLrc=null;
 			opFile=null;
-			jTextArea.setText("");
+			jTextArea.setText("您可以将Cue文件或Lrc文件拖放至此");
 			typeBox_musicType.setEnabled(false);
 			jPanel_cuemode.setEnabled(false);
 			jPanel_cuemode.setBorder(BorderFactory.createTitledBorder(null, "Cue\u76ee\u6807\u97f3\u9891\u6587\u4ef6\u7c7b\u578b:", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, new Font("\u5b8b\u4f53", Font.BOLD, 12), new Color(160, 160, 160)));
@@ -630,6 +656,7 @@ public class MasterFrame extends JFrame {
 			jRadioButton_kana.setEnabled(false);
 			jButton_convert.setEnabled(false);
 			jButton_closeFile.setEnabled(false);
+			jButton_save.setEnabled(false);
 			
 			jCheckBox_autosave.setEnabled(false);
 			jCheckBox_newfile.setEnabled(false);
@@ -641,6 +668,15 @@ public class MasterFrame extends JFrame {
 			////
 			jPanel_save.setBorder(BorderFactory.createTitledBorder(null, "\u65b0\u6587\u4ef6\u4fdd\u5b58\u8def\u5f84:", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, new Font("\u5b8b\u4f53", Font.BOLD, 12), new Color(160, 160, 160)));
 			jPanel_save.setEnabled(false);
+			
+			for (CaretListener cl : jTextArea.getCaretListeners()) {
+				jTextArea.removeCaretListener(cl);
+			}
+		
+			for (MouseListener ml : jTextArea.getMouseListeners()) {
+				if(ml.getClass()==LrcMouseAdapter.class)
+					jTextArea.removeMouseListener(ml);
+			}
 			
 			return 0;
 		}else{
@@ -671,45 +707,46 @@ public class MasterFrame extends JFrame {
 			jTextArea = new JTextArea();
 			jTextArea.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
 			jTextArea.setText("您可以将Cue文件或Lrc文件拖放至此");
-			jTextArea.setEditable(false);
+			jTextArea.setEditable(true);
 			jTextArea.setFont(new Font("\u5b8b\u4f53", Font.PLAIN, 13));
-			jTextArea.addCaretListener(new CaretListener(){
-				@Override
-				public void caretUpdate(CaretEvent e) {
-					if(jTextArea.getSelectedText()!=null && working==false){
-						try {
-							working=true;
-							jTextArea.select(jTextArea.getLineStartOffset(jTextArea.getLineOfOffset(jTextArea.getSelectionStart())),jTextArea.getLineEndOffset(jTextArea.getLineOfOffset(jTextArea.getSelectionEnd())));
-							jTextArea.grabFocus();
-							working=false;
-						} catch (BadLocationException e1) {
-							e1.printStackTrace();
-						}
-					}
-				}				
-			});
-			jTextArea.addMouseListener(new MouseAdapter(){
-				@Override
-				public void mousePressed(MouseEvent e) {
-					try {
-						jTextArea.setSelectionStart(jTextArea.getLineStartOffset(jTextArea.getLineOfOffset(jTextArea.getCaretPosition())));
-						jTextArea.setSelectionEnd(jTextArea.getLineEndOffset(jTextArea.getLineOfOffset(jTextArea.getCaretPosition())));
-					} catch (BadLocationException e1) {
-						e1.printStackTrace();
-					}						
-				}
-				public void mouseDragged(MouseEvent e) {
-					try {
-						jTextArea.setSelectionEnd(jTextArea.getLineEndOffset(jTextArea.getLineOfOffset(jTextArea.getCaretPosition())));
-					} catch (BadLocationException e1) {
-						e1.printStackTrace();
-					}						
-				}
-			});
 		}
 		return jTextArea;
 	}
 
+	private class LrcCaretListener implements CaretListener{
+		@Override
+		public void caretUpdate(CaretEvent e) {
+			if(jTextArea.getSelectedText()!=null && working==false){
+				try {
+					working=true;
+					jTextArea.select(jTextArea.getLineStartOffset(jTextArea.getLineOfOffset(jTextArea.getSelectionStart())),jTextArea.getLineEndOffset(jTextArea.getLineOfOffset(jTextArea.getSelectionEnd())));
+					jTextArea.grabFocus();
+					working=false;
+				} catch (BadLocationException e1) {
+					e1.printStackTrace();
+				}
+			}
+		}
+	}
+	
+	private class LrcMouseAdapter extends MouseAdapter{
+		@Override
+		public void mousePressed(MouseEvent e) {
+			try {
+				jTextArea.setSelectionStart(jTextArea.getLineStartOffset(jTextArea.getLineOfOffset(jTextArea.getCaretPosition())));
+				jTextArea.setSelectionEnd(jTextArea.getLineEndOffset(jTextArea.getLineOfOffset(jTextArea.getCaretPosition())));
+			} catch (BadLocationException e1) {
+				e1.printStackTrace();
+			}						
+		}
+		public void mouseDragged(MouseEvent e) {
+			try {
+				jTextArea.setSelectionEnd(jTextArea.getLineEndOffset(jTextArea.getLineOfOffset(jTextArea.getCaretPosition())));
+			} catch (BadLocationException e1) {
+				e1.printStackTrace();
+			}						
+		}
+	}
 	
 	
 	
@@ -740,6 +777,7 @@ public class MasterFrame extends JFrame {
 				typeBox_musicType.addItem(a);
 			}			
 			typeBox_musicType.setFont(new Font("Dialog", Font.BOLD, 12));
+			typeBox_musicType.setEditable(true);
 			typeBox_musicType.setEnabled(false);
 		}
 		return typeBox_musicType;
@@ -1113,6 +1151,7 @@ public class MasterFrame extends JFrame {
 			jButton_save.setLocation(new Point(96, 5));
 			jButton_save.setText("保存");
 			jButton_save.setFont(new Font("\u5b8b\u4f53", Font.BOLD, 12));
+			jButton_save.setEnabled(false);
 			jButton_save.setSize(new Dimension(81, 29));
 			jButton_save.addActionListener(new ActionListener(){
 				@Override
