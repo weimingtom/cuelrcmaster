@@ -6,14 +6,36 @@ import java.nio.channels.FileChannel;
 import java.nio.charset.*;
 import java.util.regex.*;
 
-// TODO 大変だ(T_T)/~~~　既然是CueFile类，构造时应该是一个文件，输出时应该输出CueFile的对象，我的天啊，再想再改
-// TODO 或者干脆定义成工作中的CueFile
+/** 
+ * Copyright 2010 Hexen
+ * 	
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ *
+ * @project CueLrcMaster
+ * @author Hexen
+ * @email hexen@live.cn
+ * @version 1.01
+ */
+
 public class CueFile extends OPFile {
 
 	private static final long serialVersionUID = 1L;
 	
-	private String oriFile="";
-	private String oriFileType="";
+	private String oriFileName="";	//Cue指向的源文件
+	private String oriFileType="";	//Cue指向的源文件类型
+	private String srcFileType="";	//实际源文件类型
 
 	
 	//用来建立现有cue文件的对象
@@ -40,16 +62,26 @@ public class CueFile extends OPFile {
 					Pattern p = Pattern.compile("\".*("+MusicTypes.toRegexString()+")\"");
 					Matcher a = p.matcher(sb);
 					a.find();
-					oriFile = a.group().replaceAll("\"", "");
+					oriFileName = a.group().replaceAll("\"", "");
 					break;
 				}
 			}
 			
 			br.close();
 			fr.close();
+						
+			oriFileType = oriFileName.replaceFirst(".*\\.", "").replaceFirst("\"","");
 			
-
-			oriFileType = oriFile.replaceFirst(".*\\.", "").replaceFirst("\"","");
+			//获取源音频文件的格式
+			for(int i=0;i<MusicTypes.musictypes.length;i++){
+				String srcfile=this.getAbsolutePath().substring(0, this.getAbsolutePath().lastIndexOf("\\")+1)+oriFileName.replaceFirst("\\..*", "\\.")+ MusicTypes.musictypes[i];
+				if(new File(srcfile).exists()){
+					srcFileType=MusicTypes.musictypes[i];
+					break;
+				}
+			}
+			if(srcFileType=="")
+				srcFileType=oriFileType;
 
 			// System.out.println("orifile: "+orifile);
 			// System.out.println("orifiletype: "+orifiletype);
@@ -233,12 +265,19 @@ public class CueFile extends OPFile {
 		fos.close();  
 	}*/
 	
-	
+	/**
+	 * 获取Cue文件标注的音频文件类型
+	 */
 	public String getoriFileType(){
 		return oriFileType;
 	}
 	
-	
+	/**
+	 * 获取Cue所在目录下与Cue相应的音频文件类型
+	 */
+	public String getsrcFileType(){
+		return srcFileType;
+	}	
 	
 	
 	public String getFileType(){
